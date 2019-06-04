@@ -9,7 +9,7 @@
 #include "src/userData/point.h"
 #include "src/generator/generate.h"
 #include "src/kmeans/singleThread/kmeansSingleThread.h"
-#include "src/Foo.h"
+
 //#include "src/kmeans/multiThread/test_lockfree.h"
 
 
