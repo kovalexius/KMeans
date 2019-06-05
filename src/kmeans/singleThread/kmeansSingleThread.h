@@ -4,9 +4,10 @@
 #include <iostream>
 #include <vector>
 #include <utility>
-#include <time.h>
+#include <chrono>
 
 #include <generate.h>
+
 
 namespace singleThread
 {
@@ -46,7 +47,11 @@ namespace singleThread
         }
 
     private:
+		
+		// Количество групп
         unsigned int m_k;
+		
+		// Количество всех точек
         const std::vector<T>& m_vpnts;
 
 
@@ -128,7 +133,7 @@ namespace singleThread
             for ( unsigned int i = 0; i < vpnts.size(); i++ )
             {
                 float dist2; // Фиктивная переменная, здесь нужна по причине того, что функци его принимает
-                indexes[i] = findNearest( vpnts[i], centers, dist2 );
+                indexes[i] = findNearest(vpnts[i], centers, dist2);
             }
         }
 
@@ -136,7 +141,7 @@ namespace singleThread
         std::vector<T> kmeans( const std::vector<T> &vpnts, std::vector<T>& centers, std::vector<unsigned int>& indexes )
         {
             std::vector<T> centroids;
-            centroids.resize( centers.size() );
+            centroids.resize(centers.size());
 
             // Количество точек в кластерах
             std::vector<unsigned int> numPoints;
@@ -199,6 +204,7 @@ namespace singleThread
             }
 
             return *centOld;
+			//return *centNew;
         }
     };
 }
