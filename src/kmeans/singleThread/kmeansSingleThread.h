@@ -5,7 +5,8 @@
 #include <vector>
 #include <utility>
 #include <time.h>
-#include "src/generator/generate.h"
+
+#include <generate.h>
 
 namespace singleThread
 {

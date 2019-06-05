@@ -20,9 +20,7 @@ void test::work_thread_pop()
 }
 
 void test::test_lockfree()
-{   
-    std::cout << "running kmeans" << std::endl;
-
+{
     time_t t0 = time(0);
     std::vector<std::thread> m_threads;
     for( int i = 0; i < 100; i++ )
