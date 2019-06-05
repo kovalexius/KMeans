@@ -21,19 +21,20 @@ namespace singleThread
 
         std::vector<std::pair<T, std::vector<T>>> Run()
         {
-            time_t t1, t2;
-            time(&t1);
+			auto start = std::chrono::high_resolution_clock::now();
             std::vector<T> cent;
             kmeansPP( m_vpnts, m_k, cent );
-            time(&t2);
-            std::cout << "Duration of k-means++: " << difftime(t2, t1) << std::endl;
+			auto end = std::chrono::high_resolution_clock::now();
+			float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+			std::cout << "Duration of k-means++: " << durationSec << std::endl;
             
             // Индексы центроидов для каждой точки
             std::vector<unsigned int> indexes;
             std::vector<T> newCenters = kmeans( m_vpnts, cent, indexes );
             std::vector< std::pair<T, std::vector<T>> > result;
-            time(&t1);
-            std::cout << "Duration of k-means: " << difftime(t1, t2) << std::endl;
+			start = std::chrono::high_resolution_clock::now();
+			durationSec = std::chrono::duration_cast<std::chrono::microseconds>(start - end).count() / 1000000.0;
+			std::cout << "Duration of k-means: " << durationSec << std::endl;
 
             for ( auto e : newCenters )
                 result.push_back( std::pair<T, std::vector<T>>(e, std::vector<T>()) );
