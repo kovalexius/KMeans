@@ -29,12 +29,12 @@ add_executable(kmeans_singleThread
                 src/kmeans/userData/point.h
                )
 
-#add_executable(kmeans_multithread
-#                src/multi.cpp 
-#                src/kmeans/multiThread/kmeansMultiThread.h
-#                src/kmeans/generator/generate.h
-#                src/kmeans/userData/point.h
-#			   )
+add_executable(kmeans_multithread
+                src/multi.cpp 
+                src/kmeans/multiThread/kmeansMultiThread.h
+                src/kmeans/generator/generate.h
+                src/kmeans/userData/point.h
+			   )
 
 add_executable(test_lockfree
                 src/tests/test_lockfree/main.cpp
@@ -51,5 +51,7 @@ add_executable(test_blocking
               )
               
 if(${UNIX})
-	target_link_libraries( kmeans_multithread "-pthread")
+	target_link_libraries(kmeans_multithread "-pthread")
+	target_link_libraries(test_lockfree "-pthread")
+	target_link_libraries(test_blocking "-pthread")
 endif(${UNIX})
