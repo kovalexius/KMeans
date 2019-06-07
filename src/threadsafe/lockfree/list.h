@@ -1,5 +1,5 @@
-#ifndef LOCKFREE_H
-#define LOCKFREE_H
+#ifndef __LIST_LOCKFREE_H
+#define __LIST_LOCKFREE_H
 
 #include <stdint.h>
 #include <atomic>

@@ -1,6 +1,7 @@
 #include <thread>
 #include <vector>
-#include "lockfree.h"
+
+#include "lockfree/list.h"
 
 namespace test
 {

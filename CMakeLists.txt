@@ -15,7 +15,6 @@ include_directories(
                     src/kmeans/userData/
                     src/kmeans/generator/
                     src/threadsafe/
-                    src/threadsafe/lockfree/
                     src/tests/
                     src/tests/test_lockfree/
                     src/tests/test_blocking/
@@ -36,22 +35,11 @@ add_executable(kmeans_multithread
                 src/kmeans/userData/point.h
 			   )
 
-add_executable(test_lockfree
-                src/tests/test_lockfree/main.cpp
-                src/tests/test_lockfree/test_lockfree.cpp
-                src/tests/test_lockfree/test_lockfree.h
-                src/threadsafe/lockfree/lockfree.h
-              )
+add_subdirectory(src/tests/test_blocking/ ${PROJECT_BINARY_DIR}/tests/test_blocking)
+add_subdirectory(src/tests/test_lockfree/ ${PROJECT_BINARY_DIR}/tests/test_lockfree)
+add_subdirectory(src/tests/test_threadpool/ ${PROJECT_BINARY_DIR}/tests/test_threadpool)
 
-add_executable(test_blocking
-                src/threadsafe/locks.h
-                src/tests/test_blocking/index_locker/main.cpp
-                src/tests/test_blocking/index_locker/test_index_locker.h
-                src/tests/test_blocking/index_locker/test_index_locker.cpp
-              )
               
 if(${UNIX})
 	target_link_libraries(kmeans_multithread "-pthread")
-	target_link_libraries(test_lockfree "-pthread")
-	target_link_libraries(test_blocking "-pthread")
 endif(${UNIX})
