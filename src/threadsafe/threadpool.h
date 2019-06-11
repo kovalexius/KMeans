@@ -5,6 +5,8 @@
 #include <list>
 #include <vector>
 #include <condition_variable>
+#include <atomic>
+#include <functional>
 
 #include "blocking/list.h"
 
@@ -16,6 +18,8 @@ namespace mtp
 	class CTask
 	{
 	public:
+		friend class CThreadPool;
+		
 		virtual void Execute() = 0;
 	};
 
@@ -23,13 +27,14 @@ namespace mtp
 	class CThreadPool
 	{
 	public:
+		CThreadPool() : m_isRunning(true)
+		{
+		}
+		
 		~CThreadPool()
 		{
-			m_waiting.notify_all();
-			for(auto &item : m_threads)
-			{
-				item.join();
-			}
+			m_isRunning = false;
+			WaitAll();
 		}
 		
 		void Init(int _numThreads)
@@ -50,21 +55,44 @@ namespace mtp
 
 			return true;
 		}
+		
+		void SetOnWaiting(std::function<void()> _onWaiting)
+		{
+			m_onWaiting = _onWaiting;
+		}
+		
+	private:
+		
+		void WaitAll()
+		{
+			m_waiting.notify_all();
+			for(auto &item : m_threads)
+			{
+				item.join();
+			}
+		}
 
 	private:
 		static void workThread(CThreadPool &ths)
 		{
 			auto &task_list = ths.m_tasks;
-			while (true)
+			while (ths.m_isRunning)
 			{
+				ths.m_waited.store(true);
+				
 				while (!task_list.empty())
 				{
 					CTask *tsk;
 					if(task_list.pop_front(tsk))
+					{
 						tsk->Execute();
+					}
 				}
 				
+				
 				std::unique_lock<std::mutex> lk(ths.m_waiting_mutex);
+				if(ths.m_onWaiting && ths.m_waited.exchange(false))
+					ths.m_onWaiting();
 				ths.m_waiting.wait(lk);
 			}
 		}
@@ -75,6 +103,10 @@ namespace mtp
 		
 		std::condition_variable m_waiting;
 		std::mutex m_waiting_mutex;
+		std::atomic<bool> m_isRunning;
+		
+		std::atomic<bool> m_waited;
+		std::function<void()> m_onWaiting;
 	};
 
 }
