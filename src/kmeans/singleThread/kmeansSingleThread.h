@@ -129,6 +129,8 @@ namespace singleThread
          */
         void makeClusters( const std::vector<T>& vpnts, const std::vector<T>& centers, std::vector<unsigned int>& indexes )
         {
+			auto start = std::chrono::high_resolution_clock::now();
+			
             if (indexes.size() < vpnts.size())
                 indexes.resize(vpnts.size());
             for ( unsigned int i = 0; i < vpnts.size(); i++ )
@@ -136,35 +138,37 @@ namespace singleThread
                 float dist2; // Фиктивная переменная, здесь нужна по причине того, что функци его принимает
                 indexes[i] = findNearest(vpnts[i], centers, dist2);
             }
+            
+            auto end = std::chrono::high_resolution_clock::now();
+			float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+			std::cout << "Duration of " << __FUNCTION__ << " :" << durationSec << std::endl;
         }
 
         //! Возвращает: новые центры
-        std::vector<T> kmeans( const std::vector<T> &vpnts, std::vector<T>& centers, std::vector<unsigned int>& indexes )
+        std::vector<T> kmeans(const std::vector<T> &vpnts, 
+							  std::vector<T>& centers, 
+							  std::vector<unsigned int>& indexes)
         {
-            std::vector<T> centroids;
-            centroids.resize(centers.size());
+			auto start = std::chrono::high_resolution_clock::now();
+			
+            std::vector<T> centroids(centers.size());
 
             // Количество точек в кластерах
-            std::vector<unsigned int> numPoints;
-            numPoints.resize(centers.size());
-
-            // Суммарная разница между точкой и центроидом в кластерах
-            //vector<T> sumVec;
-            //sumVec.resize(centers.size());
+            std::vector<unsigned int> numPoints(centers.size());
 
             // Заводим два указателяь, которые будут указывать
             // попеременно на centers и centroids, в дальнейшем работаем со страыми и новыми центроидами через них
-            std::vector<T> *centOld;
-            std::vector<T> *centNew;
-            centOld = &centers;   // Сначала так
-            centNew = &centroids; // инициализируем
+            std::vector<T> *centOld = &centers;   // Сначала так
+            std::vector<T> *centNew = &centroids; // инициализируем
+            
+            // Суммарная разница между точкой и центроидом в кластерах
             float V = 0, oldV = -1;    // Сумма квадратных "отклонений" (всегда будет положительным ненулевым числом)
+            int numIterations = 0;
             while( V != oldV )
             {
-                time_t t1;
-                time_t t2;
-
-                time(&t1);
+				auto start = std::chrono::high_resolution_clock::now();
+				
+				numIterations++;
 
                 oldV = V;
                 V = 0;   
@@ -175,7 +179,6 @@ namespace singleThread
                 for( unsigned int i = 0; i < vpnts.size(); i++ )
                 {
                     unsigned int ind = indexes[i];
-                    //sumVec[ind] += vpnts[i] - centOld->operator[]( ind ); // участвует старый центроид
                     T pnt = vpnts[i] - centOld->operator[](ind); // участвует старый центроид
                     V += (float)(pnt * pnt);
                     centNew->operator[]( ind ) += vpnts[i]; // кладем в новый центроид
@@ -187,8 +190,6 @@ namespace singleThread
                 // Цикл по кол-ву центроидов
                 for (unsigned int i = 0; i < centNew->size(); i++)
                 {
-                    //V += sumVec[i] * sumVec[i];
-                    //sumVec[i] = T::getZero();
                     centOld->operator[](i) = T::getZero();
                     if ( numPoints[i] > 0 )
                         centNew->operator[](i) /= (float)numPoints[i];
@@ -200,12 +201,17 @@ namespace singleThread
 
                 std::cout << "V: " << V << std::endl;
 
-                time(&t2);
-                std::cout << "Iteration duration: " << difftime(t2, t1) << std::endl;
+                auto end = std::chrono::high_resolution_clock::now();
+				float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+				std::cout << "Duration of iteration :" << durationSec << std::endl;
             }
 
+            auto end = std::chrono::high_resolution_clock::now();
+			float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+			std::cout << "Duration of " << __FUNCTION__ << " :" << durationSec << 
+				" num of iterations: " << numIterations << std::endl;
+            
             return *centOld;
-			//return *centNew;
         }
     };
 }

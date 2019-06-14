@@ -1,7 +1,19 @@
 #ifndef KMEANSMULTITHREAD
 #define KMEANSMULTITHREAD
 
+#include <iostream>
+#include <vector>
+#include <chrono>
+
+#include <memory>
+
+
+#include <unistd.h>
+
 #include "threadpool.h"
+
+#include "kmeans_pp.h"
+#include "helpers.h"
 
 namespace multiThread
 {
@@ -10,36 +22,59 @@ namespace multiThread
     {
 		class CKMTask : public mtp::CTask
 		{
-			CKMTask()
+		public:
+			CKMTask(const int _begin,
+					const int _end,
+					const std::vector<T> &_vpnts,
+					const std::vector<T> &_centers,
+					std::vector<unsigned int> &_indexes) : m_begin(_begin),
+														m_end(_end),
+														m_vpnts(_vpnts),
+														m_centers(_centers),
+														m_indexes(_indexes)
 			{
-
+				
 			}
 
 			virtual void Execute() override
 			{
-
+				for ( unsigned int i = m_begin; i < m_end; i++)
+				{
+					float dist2; 
+					m_indexes[i] = findNearest(m_vpnts[i], m_centers, dist2);
+				}
 			}
+			
+			
+		private:
+			const int m_begin, m_end;
+			const std::vector<T> &m_vpnts;
+			const std::vector<T> &m_centers;
+			std::vector<unsigned int> &m_indexes;
 		};
 
     public:
-        CKmeans( const vector<T>& vpnts, unsigned int numGroups ): m_vpnts( vpnts ), m_k( numGroups )
+        CKmeans(const std::vector<T>& vpnts, unsigned int numGroups): m_vpnts(vpnts), 
+																	m_numClusters(numGroups)
+																	
         {
+			m_pool.Init(8);
         }
 
-        vector< pair< T, vector<T> > > Run()
+        std::vector<std::pair<T, std::vector<T>>> Run()
         {
-            vector<T> cent;
-            kmeansPP( m_vpnts, m_k, cent );
+            std::vector<T> cent;
+            kmeansPP(m_vpnts, m_numClusters, cent);
+			
             // Индексы центроидов для каждой точки
-            vector<unsigned int> indexes;
-            vector<T> newCenters = kmeans( m_vpnts, cent, indexes );
-            vector< pair<T, vector<T>> > result;
-
-            for ( auto e : newCenters )
-                result.push_back( pair<T, vector<T>>( e, vector<T>()) );
+            std::vector<T> newCenters = kmeans(cent);
+			
+            std::vector<std::pair<T, std::vector<T>>> result;
+            for (auto e : newCenters)
+                result.push_back(std::pair<T, std::vector<T>>(e, std::vector<T>()));
             for (unsigned int i = 0; i < m_vpnts.size(); i++)
             {
-                auto ind = indexes[i];
+                auto ind = m_indexes[i];
                 result[ind].second.push_back(m_vpnts[i]);
             }
 
@@ -47,137 +82,97 @@ namespace multiThread
         }
 
     private:
-        unsigned int m_k;
-        const vector<T>& m_vpnts;
-
-
-        /*!
-         *  Находит ближайший центроид для заданной точки pnt из уже имеющихся центроидов в centers
-         *  Возвращает dist2 - квадрат дистанции до боижайшего центроида и
-         *  индекс ближайшего центроида в качестве return value типа unsigned int
-         */
-        unsigned int findNearest( const T& pnt, const vector<T>& centers, float& dist2 )
-        {
-            unsigned int min_i;
-            //dist2 = HUGE_VAL;
-            T PntCntr = centers[0] - pnt;
-            dist2 = PntCntr * PntCntr;
-            min_i = 0;
-            for( unsigned int i = 1; i < centers.size(); i++ )
-            {
-                PntCntr = centers[i] - pnt;
-                float d2 = PntCntr * PntCntr;
-                if ( dist2 > d2 )
-                {
-                    dist2 = d2;
-                    min_i = i;
-                }
-            }
-            return min_i;
-        }
-
-        /*!
-         *  Алгоритм k-means++, он более осмысленно выбирает начальные цендроиды из заданного множества - неслучайно, только первый центроид случайно
-         *  Принимает всё множество точек в vpnts, желаемое количество центроидов в n_cent
-         *  Возвращает центроиды в centers
-         */
-        void kmeansPP( const vector<T>& vpnts, const unsigned int n_cent, vector<T>& centers )
-        {
-            vector<float> dist2;
-            dist2.resize( vpnts.size() );
-
-            if ( centers.size() < n_cent )
-                centers.resize( n_cent );
-
-            // Первый центроид выбираем случайно
-            centers[0] = vpnts[ rand() % vpnts.size() ];
-
-            // Суммируем минимальное расстояние от каждой точки до ближайшего уже имеющегося центроида,
-            // затем находим случайную величину от 0 до этой sum (суммы)
-            // затем выбираем следующий центроид путем последовательного вычитания расстояния от каждой точки до ближайшего центроида из этой суммы
-            for ( unsigned int n_cluster = 1; n_cluster < n_cent; n_cluster++ )
-            {
-                float sum = 0;
-                for( unsigned int j = 0; j < vpnts.size(); j++ )
-                {
-                    findNearest( vpnts[j], centers, dist2[j] );
-                    sum += dist2[j];
-                }
-                sum = generators::randf(sum);
-                for( unsigned int j = 0; j < vpnts.size(); j++ )
-                {
-                    sum -= dist2[j];
-                    if( sum <= 0 )
-                    {
-                        centers[n_cluster] = vpnts[j];
-                        break;
-                    }
-                }
-            }
-        }
+        unsigned int m_numClusters;
+        const std::vector<T>& m_vpnts;
+		std::vector<unsigned int> m_indexes;
+		mtp::CThreadPool m_pool;
 
         /*!
          *  Кластеризует, т.е. выбирает для каждого центроида точки, входящие в его кластер
          *  путем последовательного нахождения для каждой точки ближайшего к нему центроида
          *  Вход: vpnts - все точки множества, centers - цетроиды
-         *  Выход: indexes - индексы для каждой точки, указывающие соответствующий центроид к которому каждая точка принадлежит.
+         *  Выход: m_indexes - индексы для каждой точки, указывающие соответствующий центроид к которому каждая точка принадлежит.
          */
-        void makeClusters( const vector<T>& vpnts, const vector<T>& centers, vector<unsigned int>& indexes )
+        void makeClusters(const std::vector<T>& centers)
         {
-            if (indexes.size() < vpnts.size())
-                indexes.resize(vpnts.size());
-            for ( unsigned int i = 0; i < vpnts.size(); i++ )
-            {
-                float dist2; // Фиктивная переменная, здесь нужна по причине того, что функци его принимает
-                indexes[i] = findNearest( vpnts[i], centers, dist2 );
-            }
+			auto start = std::chrono::high_resolution_clock::now();
+			
+            if (m_indexes.size() < m_vpnts.size())
+                m_indexes.resize(m_vpnts.size());
+			
+			auto curNums = m_vpnts.size()/8;
+			auto additionly = m_vpnts.size()%8;
+			CKMTask *tasks[9];
+			for(int i = 0; i < 8; i++)
+			{
+				tasks[i] = new CKMTask(i*curNums, i*curNums + curNums, m_vpnts, centers, m_indexes);
+			}
+			tasks[8] = new CKMTask(8*curNums, 8*curNums + additionly, m_vpnts, centers, m_indexes);			
+			for(int i = 0; i < 9; i++)
+			{
+				m_pool.AddTask(tasks[i]);
+			}
+			for(int i = 0; i < 9; i++)
+			{
+				tasks[i]->Wait();
+				delete tasks[i];
+			}
+			
+            auto end = std::chrono::high_resolution_clock::now();
+			float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+			std::cout << "Duration of " << __FUNCTION__ << " :" << durationSec << std::endl;
         }
 
-        //! Возвращает: новые центры
-        vector<T> kmeans( const vector<T> &vpnts, vector<T>& centers, vector<unsigned int>& indexes )
+        /*! Возвращает: новые центры
+		 * 	Вход: vpnts - все точки множества, centers - цетроиды
+		 *  Выход: m_indexes - индексы для каждой точки, указывающие соответствующий центроид к которому каждая точка принадлежит.
+		 *  return: набор центроидов
+		 */
+        std::vector<T> kmeans(std::vector<T> &centers)
         {
-            vector<T> centroids;
-            centroids.resize( centers.size() );
+			auto start = std::chrono::high_resolution_clock::now();
+			
+            std::vector<T> centroids(centers.size());
 
             // Количество точек в кластерах
-            vector<unsigned int> numPoints;
-            numPoints.resize(centers.size());
-
-            // Суммарная разница между точкой и центроидом в кластерах
-            //vector<T> sumVec;
-            //sumVec.resize(centers.size());
+            std::vector<unsigned int> numPoints(centers.size());
 
             // Заводим два указателяь, которые будут указывать
             // попеременно на centers и centroids, в дальнейшем работаем со страыми и новыми центроидами через них
-            vector<T> *centOld;
-            vector<T> *centNew;
-            centOld = &centers;   // Сначала так
-            centNew = &centroids; // инициализируем
-            float V = 0, oldV = -1;
-            while( V != oldV )
+            std::vector<T> *centOld = &centers;   // Сначала так
+            std::vector<T> *centNew = &centroids; // инициализируем
+
+            // Суммарная разница между точкой и центроидом в кластерах - признак
+            float V = 0.0, oldV = -1;
+			int numIterations = 0;
+            while(V != oldV)
             {
+				auto start = std::chrono::high_resolution_clock::now();
+				
+				numIterations++;
+				
+				
                 oldV = V;
-                V = 0;
+                V = 0.0;
 
                 // Перекластеризовать
-                makeClusters(vpnts, *centOld, indexes);
+                makeClusters(*centOld);
 
-                for( unsigned int i = 0; i < vpnts.size(); i++ )
+                for( unsigned int i = 0; i < m_vpnts.size(); i++ )
                 {
-                    unsigned int ind = indexes[i];
-                    T pnt = vpnts[i] - centOld->operator[](ind); // участвует старый центроид
+                    auto ind = m_indexes[i];
+                    T pnt = m_vpnts[i] - centOld->operator[](ind); // участвует старый центроид
                     V += pnt*pnt;
-                    centNew->operator[]( ind ) += vpnts[i]; // кладем в новый центроид
+                    centNew->operator[](ind) += m_vpnts[i]; // вычисления вместе с выделением массива под центроиды
                     numPoints[ind]++;
                 }
 
-                // Обнулить, перезаписать нуль векторами
-                // поделить на numPoints, обнулить numPoints;
+                // Пересчитывание новых центроидов:
+                // сложить все точки кластера в ячейку для центроида,
+                // поделить на количество точек - получится новый центроид;
                 // Цикл по кол-ву центроидов
                 for (unsigned int i = 0; i < centNew->size(); i++)
                 {
-                    //V += sumVec[i] * sumVec[i];
-                    //sumVec[i] = T::getZero();
                     centOld->operator[](i) = T::getZero();
                     if ( numPoints[i] > 0 )
                         centNew->operator[](i) /= (float)numPoints[i];
@@ -187,8 +182,17 @@ namespace multiThread
                 // Поменять местами Old и New
                 swap(centNew, centOld);
 
-                cout << "V: " << V << endl;
+                std::cout << "V: " << V << std::endl;
+				
+				auto end = std::chrono::high_resolution_clock::now();
+				float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+				std::cout << "Duration of iteration :" << durationSec << std::endl;
             }
+            
+            auto end = std::chrono::high_resolution_clock::now();
+			float durationSec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+			std::cout << "Duration of " << __FUNCTION__ << " :" << durationSec << 
+				" num of iterations: " << numIterations << std::endl;
 
             return *centOld;
         }

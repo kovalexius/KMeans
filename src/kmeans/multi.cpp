@@ -13,7 +13,6 @@ const uint32_t NUM_CLUSTERS = 20;  // Количество кластеров
 
 int main()
 {
-    /*
     typedef CPoint<NUM_METRICS> MYPOINT;
     std::vector<MYPOINT> vpoints;
 
@@ -28,6 +27,6 @@ int main()
         std::cout << e.first << " " << std::endl;
 
     std::cin.get();
-    */
+
     return 0;
 }

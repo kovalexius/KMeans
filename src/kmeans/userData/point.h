@@ -10,8 +10,7 @@ template< unsigned int N >
 class CPoint
 {
     float m_coord[N];
-    //float *m_coord;
-    //const unsigned int m_num = N;
+    
 public:
     CPoint()
     {
@@ -38,41 +37,6 @@ public:
 			m_coord[i] = other;
 		return *this;
 	}
-
-    /*
-    CPoint()
-    {
-        try
-        {
-            m_coord = new float[N];
-        }
-        catch( std::bad_alloc )
-        {
-            m_coord = nullptr;
-        }
-    }
-
-    CPoint( const CPoint<N>& other ) = delete;
-
-    CPoint<N>& operator = (  const CPoint<N>& other ) = delete;
-
-    CPoint( CPoint<N>&& other ): m_coord(other.m_coord)
-    {
-        other.m_coord = nullptr;
-    }
-
-	CPoint<N>& operator=( CPoint<N>&& other ) 
-	{
-		std::swap( m_coord, other.m_coord );
-		return *this;
-	}
-
-    ~CPoint()
-    {
-        delete m_coord;
-    }
-
-    */
 
     //! Получить размерность
     inline unsigned int getMetric() const
@@ -128,7 +92,7 @@ public:
 		return *this;
 	}
 
-	//! Скалярное умножение векторов на другой вектор
+	//! Скалярное умножение векторов на другой вектор (без взятия корня)
     inline float operator*(const CPoint<N>& other) const
 	{
 		float result = 0.0;
@@ -171,10 +135,6 @@ public:
 			m_coord[i] /= div;
 		return *this;
 	}
-
-    //! Оператор << для вывода содержимого на печать
-    //template<unsigned int>
-    //friend std::ostream& operator<< ( std::ostream& os, const CPoint<N>& pnt ); // Friend не нужен, есть же методы для чтения содержимого
 
     //! Получить "нуль-вектор"
     static inline CPoint<N> getZero()

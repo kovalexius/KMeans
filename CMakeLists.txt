@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(KMeans)
+#project(KMeans)
 
 if(${UNIX})
     add_definitions( -Wall -Wl,--no-as-needed -pthread -lpthread -std=c++11 )
@@ -21,25 +21,11 @@ include_directories(
                     src/tests/test_blocking/index_locker/
                    )
 
-add_executable(kmeans_singleThread
-                src/single.cpp
-                src/kmeans/singleThread/kmeansSingleThread.h
-                src/kmeans/generator/generate.h
-                src/kmeans/userData/point.h
-               )
 
-add_executable(kmeans_multithread
-                src/multi.cpp 
-                src/kmeans/multiThread/kmeansMultiThread.h
-                src/kmeans/generator/generate.h
-                src/kmeans/userData/point.h
-			   )
-
+add_subdirectory(src/kmeans ${PROJECT_BINARY_DIR}/kmeans)
 add_subdirectory(src/tests/test_blocking/ ${PROJECT_BINARY_DIR}/tests/test_blocking)
 add_subdirectory(src/tests/test_lockfree/ ${PROJECT_BINARY_DIR}/tests/test_lockfree)
 add_subdirectory(src/tests/test_threadpool/ ${PROJECT_BINARY_DIR}/tests/test_threadpool)
 
               
-if(${UNIX})
-	target_link_libraries(kmeans_multithread "-pthread")
-endif(${UNIX})
+
