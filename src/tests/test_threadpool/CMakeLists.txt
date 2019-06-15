@@ -4,6 +4,10 @@ project(test_threadpool)
 
 add_executable(test_threadpool
 				main.cpp
+				../../threadsafe/threadpool.cpp
+				../../threadsafe/threadpool.h
+				../../threadsafe/task.cpp
+				../../threadsafe/task.h
 			)
 			
 if(${UNIX})
