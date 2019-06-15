@@ -3,7 +3,9 @@
 #include <iostream>
 #include <sys/types.h>
 
-#include <unistd.h>
+//#include <unistd.h>
+#include <stdio.h>
+#include "stdlib.h"
 
 #include <thread>
 #include <mutex>
@@ -86,7 +88,7 @@ int main()
 		pool.AddTask(&task8);
 	}
 	
-	sleep(3);
+	_sleep(3);
 
 	for(int i = 0; i < 2; i++)
 	{
@@ -101,5 +103,5 @@ int main()
 	}
 
 	
-	sleep(3);
+	_sleep(3);
 }
