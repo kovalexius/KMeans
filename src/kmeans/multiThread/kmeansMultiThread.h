@@ -9,7 +9,12 @@
 #include <atomic>
 #include <thread>
 
+#ifdef __GNUC__
 #include <unistd.h>
+#else
+#include <stdio.h>
+#include "stdlib.h"
+#endif
 
 #include "threadpool.h"
 
