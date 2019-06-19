@@ -16,6 +16,8 @@ add_executable(kmeans_multithread
                 ../threadsafe/task.cpp
                 ../threadsafe/task.h
                 ./multiThread/kmeansMultiThread.h
+                ./multiThread/helpers.cpp
+                ./multiThread/helpers.h
                 ./generator/generate.h
                 ./userData/point.h
 			   )

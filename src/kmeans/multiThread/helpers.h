@@ -2,6 +2,7 @@
 #define __HELPERS__H
 
 #include <vector>
+#include <mutex>
 
 namespace multiThread
 {
@@ -31,6 +32,28 @@ namespace multiThread
 		}
 		return min_i;
 	}
+	
+	class AtomicFloat
+	{
+	public:
+		AtomicFloat(const float _val);
+		AtomicFloat(const AtomicFloat&) = delete;
+		AtomicFloat(AtomicFloat&&) = delete;
+		AtomicFloat& operator = (const AtomicFloat&) = delete;
+		
+		~AtomicFloat();
+		
+		bool operator == (const float _val) const;
+		bool operator != (const float _val) const;
+		AtomicFloat& operator += (const float _val);
+		AtomicFloat& operator = (const float _val);
+		
+		operator float() const;
+		
+	private:
+		mutable std::mutex m_mutex;
+		float m_value;
+	};
 }
 
 #endif

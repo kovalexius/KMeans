@@ -51,14 +51,14 @@ namespace mtp
 		auto &task_list = ths.m_tasks;
 		while (ths.m_isRunning)
 		{
-			
 			while (!task_list.empty())
 			{
 				CTask *tsk;
 				if(task_list.pop_front(tsk))
 				{
+					//tsk->m_waited = true;
 					tsk->Execute();
-					tsk->m_promise.set_value();
+					tsk->Notify();
 				}
 			}
 				

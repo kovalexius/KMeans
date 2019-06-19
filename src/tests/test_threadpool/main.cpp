@@ -3,9 +3,12 @@
 #include <iostream>
 #include <sys/types.h>
 
-//#include <unistd.h>
+#ifdef __GNUC__
+#include <unistd.h>
+#else
 #include <stdio.h>
 #include "stdlib.h"
+#endif
 
 #include <thread>
 #include <mutex>
@@ -26,10 +29,14 @@ public:
 			inc();
 		}
 		
-		//pthread_t threadB = pthread_self();
+		#ifdef __GNUC__
+		pthread_t threadB = pthread_self();
+		#endif
 		
 		std::cout << "tid: " << std::this_thread::get_id() << 
-			//" posix tid: " << threadB <<
+		#ifdef __GNUC__
+			" posix tid: " << threadB <<
+		#endif
 			" sum: " << m_sum << std::endl;
 	}
 	
@@ -88,7 +95,11 @@ int main()
 		pool.AddTask(&task8);
 	}
 	
-	_sleep(3);
+#ifdef __GNUC__
+	sleep(3);
+#else
+	_sleep(3000);
+#endif
 
 	for(int i = 0; i < 2; i++)
 	{
@@ -102,6 +113,9 @@ int main()
 		pool.AddTask(&task8);
 	}
 
-	
-	_sleep(3);
+#ifdef __GNUC__
+	sleep(3);
+#else
+	_sleep(3000);
+#endif
 }
